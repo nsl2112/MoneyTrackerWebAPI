@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using MoneyTracker;
+using Scalar.AspNetCore;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
@@ -20,8 +21,9 @@ try
           .Enrich.FromLogContext()
           .WriteTo.Console();
     });
-    builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseNpgsql(builder.Configuration.GetConnectionString("PostgreSqlConnection")));
+    builder.Services.AddDbContext<AppDbContext>(options => 
+        options.UseNpgsql(builder.Configuration.GetConnectionString("PostgreSqlConnection"))
+               .LogTo(Console.WriteLine, LogLevel.Information));
     
     builder.Services.AddControllers();
     // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
