@@ -13,7 +13,7 @@ public class ExpenseItemTypeConfiguration : IEntityTypeConfiguration<ExpenseItem
         builder.Property(e => e.Description)
             .HasMaxLength(500);
         
-        builder.HasOne<ExpenseCategory>()
+        builder.HasOne<ExpenseCategory>(e => e.ExpenseCategory)
             .WithMany()
             .HasForeignKey(e => e.ExpenseCategoryId)
             .IsRequired();
@@ -22,17 +22,17 @@ public class ExpenseItemTypeConfiguration : IEntityTypeConfiguration<ExpenseItem
             .HasColumnType("decimal(18,2)")
             .IsRequired();
 
-        builder.HasOne<Currency>()
+        builder.HasOne<Currency>(e => e.Currency)
             .WithMany()
             .HasForeignKey(e => e.CurrencyId)
             .OnDelete(DeleteBehavior.Restrict)
             .IsRequired();
         
-        builder.Property(e => e.Date)
+        builder.Property(e => e.TransactionDate)
             .HasColumnType("TIMESTAMPTZ")
             .IsRequired();
 
-        builder.HasOne<AppUser>()
+        builder.HasOne<AppUser>(e => e.AppUser)
             .WithMany()
             .HasForeignKey(e => e.UserId)
             .OnDelete(DeleteBehavior.Cascade);
