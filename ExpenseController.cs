@@ -68,14 +68,21 @@ namespace MoneyTracker
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateExpense(string? id, ExpenseItem expense)
+        public async Task<IActionResult> UpdateExpense(string? id, ExpenseCreateDTO expense)
         {
-            if (id != expense.Id)
+            var item = await context.ExpenseItems.FindAsync(id);
+            if (item == null)
             {
-                return BadRequest();
+                return NotFound();
             }
 
-            context.Entry(expense).State = EntityState.Modified;
+            item.Description = expense.Description;
+            item.ExpenseCategoryId = expense.ExpenseCategoryId;
+            item.Amount = expense.Amount;
+            item.CurrencyId = expense.CurrencyId;
+            item.TransactionDate = expense.TransactionDate;
+
+            context.ExpenseItems.Update(item);
             await context.SaveChangesAsync();
 
             return NoContent();
@@ -84,10 +91,15 @@ namespace MoneyTracker
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteExpense(string? id)
         {
-            await context.ExpenseItems
+            var deletedItemsCount = await context.ExpenseItems
                 .Where(e => e.Id == id)
                 .ExecuteDeleteAsync();
             
+            if (deletedItemsCount == 0)
+            {
+                return NotFound();
+            }
+
             await context.SaveChangesAsync();
 
             return NoContent();
