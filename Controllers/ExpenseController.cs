@@ -22,56 +22,23 @@ namespace MoneyTracker
                     TransactionDate = e.TransactionDate
                 });
 
-            if (queryParams != null && !string.IsNullOrEmpty(queryParams.ExpenseCategory))
+            if (queryParams != null)
             {
-                expenses = expenses.Where(e => e.ExpenseCategoryName == queryParams.ExpenseCategory);
-            }
+                if (!string.IsNullOrEmpty(queryParams.ExpenseCategory))
+                {
+                    expenses = expenses.Where(e => e.ExpenseCategoryName == queryParams.ExpenseCategory);
+                }
 
-            if (queryParams != null && !string.IsNullOrEmpty(queryParams.Amount))
-            {
-                var values = queryParams.Amount.Split('-');
-                if (values.Length == 1)
+                if (queryParams.Amount != null)
                 {
-                    if (decimal.TryParse(queryParams.Amount, out decimal amount))
-                    {
-                        expenses = expenses.Where(e => e.Amount == amount);
-                    }
+                    expenses = expenses.Where(e => e.Amount >= queryParams.Amount.MinAmount &&
+                                                   e.Amount <= queryParams.Amount.MaxAmount);
                 }
-                else if (values.Length == 2)
-                {
-                    if (decimal.TryParse(values[0], out decimal minAmount) && 
-                        decimal.TryParse(values[1], out decimal maxAmount))
-                    {
-                        expenses = expenses.Where(e => e.Amount >= minAmount && e.Amount <= maxAmount);
-                    }
-                }
-                else
-                {
-                    return BadRequest("Invalid amount range format. Use 'min-max' or a single value.");
-                }
-            }
 
-            if (queryParams != null && !string.IsNullOrEmpty(queryParams.Date))
-            {
-                var values = queryParams.Date.Split('_');
-                if (values.Length == 1)
+                if (queryParams.Date != null)
                 {
-                    if (DateTime.TryParse(queryParams.Date, out DateTime date))
-                    {
-                        expenses = expenses.Where(e => e.TransactionDate.Date == date.Date);
-                    }
-                }
-                else if (values.Length == 2)
-                {
-                    if (DateTime.TryParse(values[0], out DateTime startDate) && 
-                        DateTime.TryParse(values[1], out DateTime endDate))
-                    {
-                        expenses = expenses.Where(e => e.TransactionDate.Date >= startDate.Date && e.TransactionDate.Date <= endDate.Date);
-                    }
-                }
-                else
-                {
-                    return BadRequest("Invalid date range format. Use 'start-end' or a single date.");
+                    expenses = expenses.Where(e => e.TransactionDate >= queryParams.Date.StartDate &&
+                                                   e.TransactionDate <= queryParams.Date.EndDate);
                 }
             }
 
