@@ -1,4 +1,8 @@
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using MoneyTracker;
 using Scalar.AspNetCore;
 using Serilog;
@@ -21,9 +25,38 @@ try
           .Enrich.FromLogContext()
           .WriteTo.Console();
     });
+
     builder.Services.AddDbContext<AppDbContext>(options => 
         options.UseNpgsql(builder.Configuration.GetConnectionString("PostgreSqlConnection"))
                .LogTo(Console.WriteLine, LogLevel.Information));
+
+    builder.Services.AddIdentity<AppUser, IdentityRole>()
+                    .AddEntityFrameworkStores<AppDbContext>();
+    
+    builder.Services.AddOptions<JWT>().BindConfiguration(JWT.SectionName);
+    builder.Services.AddScoped<ITokenService, JWTTokenService>();
+    builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    }).AddJwtBearer(options =>
+    {
+        options.MapInboundClaims = false;
+        options.SaveToken = false;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["JWT:Issuer"],
+            ValidAudience = builder.Configuration["JWT:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(builder.Configuration["JWT:Key"])),
+            NameClaimType = JwtRegisteredClaimNames.Name,
+            RoleClaimType = "role",
+        };
+    });
+    builder.Services.AddAuthorization();
     
     builder.Services.AddControllers();
     // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -39,13 +72,11 @@ try
     }
 
     app.UseHttpsRedirection();
-
+    app.UseAuthentication();
     app.UseAuthorization();
-
     app.MapControllers();
 
     app.Run();
-
 }
 catch (Exception ex)
 {

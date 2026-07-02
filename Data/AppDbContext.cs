@@ -17,5 +17,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
         modelBuilder.ApplyConfiguration(new CurrencyConfiguration());
         modelBuilder.ApplyConfiguration(new ExpenseCategoryConfiguration());
         modelBuilder.ApplyConfiguration(new ExpenseItemTypeConfiguration());
+        modelBuilder.ApplyConfiguration(new RoleConfiguration());
     }
 }

@@ -1,8 +1,10 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace MoneyTracker
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class ExpenseController(AppDbContext context) : ControllerBase
