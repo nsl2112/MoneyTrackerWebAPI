@@ -15,6 +15,7 @@ namespace MoneyTracker
             var expenses = context.ExpenseItems
                 .Include(e => e.ExpenseCategory)
                 .Include(e => e.Currency)
+                .ApplyFilters(queryParams)
                 .Select(e => new ExpenseGetDTO
                 {
                     Description = e.Description,
@@ -23,26 +24,6 @@ namespace MoneyTracker
                     CurrencyName = e.Currency.Code,
                     TransactionDate = e.TransactionDate
                 });
-
-            if (queryParams != null)
-            {
-                if (!string.IsNullOrEmpty(queryParams.ExpenseCategory))
-                {
-                    expenses = expenses.Where(e => e.ExpenseCategoryName == queryParams.ExpenseCategory);
-                }
-
-                if (queryParams.Amount != null)
-                {
-                    expenses = expenses.Where(e => e.Amount >= queryParams.Amount.MinAmount &&
-                                                   e.Amount <= queryParams.Amount.MaxAmount);
-                }
-
-                if (queryParams.Date != null)
-                {
-                    expenses = expenses.Where(e => e.TransactionDate >= queryParams.Date.StartDate &&
-                                                   e.TransactionDate <= queryParams.Date.EndDate);
-                }
-            }
 
             await expenses.ToListAsync();
             return Ok(expenses);
@@ -71,6 +52,28 @@ namespace MoneyTracker
             }
             
             return Ok(expense);
+        }
+
+        [HttpGet("total")]
+        public async Task<IActionResult> GetTotalExpenses([FromQuery] ExpenseQuerryParams? queryParams)
+        {
+            var expenses = context.ExpenseItems
+                .AsQueryable()
+                .ApplyFilters(queryParams);
+
+            var totalExpenses = await expenses.SumAsync(e => e.Amount);
+            return Ok(totalExpenses);
+        }
+
+        [HttpGet("average")]
+        public async Task<IActionResult> GetAverageExpenses([FromQuery] ExpenseQuerryParams? queryParams)
+        {
+            var expenses = context.ExpenseItems
+                .AsQueryable()
+                .ApplyFilters(queryParams);
+
+            var averageExpenses = await expenses.AverageAsync(e => e.Amount);
+            return Ok(averageExpenses);
         }
 
         [HttpPost]
