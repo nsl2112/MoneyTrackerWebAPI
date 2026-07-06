@@ -86,7 +86,7 @@ namespace MoneyTracker
             };
             context.ExpenseItems.Add(expense);
             await context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetExpense), new { id = expense.Id }, expense);
+            return CreatedAtAction(nameof(GetExpense), new { id = expense.Id }, expenseDTO);
         }
 
         [HttpPut("{id}")]
