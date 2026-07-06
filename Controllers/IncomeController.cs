@@ -9,11 +9,12 @@ namespace MoneyTracker
     public class IncomeController(AppDbContext context) : ControllerBase
     {
         [HttpGet]
-        public async Task<IActionResult> GetIncomes()
+        public async Task<IActionResult> GetIncomes(IncomeQuerryParams? queryParams)
         {
             var incomes = await context.IncomeItems
                 .Include(i => i.IncomeCategory)
                 .Include(i => i.Currency)
+                .ApplyFilters(queryParams)
                 .Select(i => new IncomeGetDTO
                 {
                     Description = i.Description,
@@ -48,6 +49,24 @@ namespace MoneyTracker
                 return NotFound();
             }
             return Ok(income);
+        }
+
+        [HttpGet("total")]
+        public async Task<IActionResult> GetTotalIncome(IncomeQuerryParams? queryParams)
+        {
+            var total = await context.IncomeItems
+                .ApplyFilters(queryParams)
+                .SumAsync(i => i.Amount);
+            return Ok(total);
+        }
+
+        [HttpGet("average")]
+        public async Task<IActionResult> GetAverageIncome(IncomeQuerryParams? queryParams)
+        {
+            var average = await context.IncomeItems
+                .ApplyFilters(queryParams)
+                .AverageAsync(i => i.Amount);
+            return Ok(average);
         }
 
         [HttpPost]
