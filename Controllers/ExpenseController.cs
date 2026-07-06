@@ -121,9 +121,7 @@ namespace MoneyTracker
             {
                 return NotFound();
             }
-
-            await context.SaveChangesAsync();
-
+            
             return NoContent();
         }
     }
