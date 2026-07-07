@@ -29,9 +29,7 @@ public class ExpenseItemTypeConfiguration : IEntityTypeConfiguration<ExpenseItem
             .IsRequired();
         
         builder.Property(e => e.TransactionDate)
-            .HasConversion(v => v.ToUniversalTime(), 
-                           v => DateTime.SpecifyKind(v, DateTimeKind.Utc))
-            .HasColumnType("TIMESTAMPTZ")
+            .HasColumnType("TIMESTAMP")
             .IsRequired();
 
         builder.HasOne<AppUser>(e => e.AppUser)
@@ -47,7 +45,7 @@ public class ExpenseItemTypeConfiguration : IEntityTypeConfiguration<ExpenseItem
                 ExpenseCategoryId = 1,
                 Amount = 15.50m,
                 CurrencyId = 1,
-                TransactionDate = new DateTime(2026, 06, 20, 12, 30, 0, DateTimeKind.Utc),
+                TransactionDate = new DateTime(2026, 06, 20, 12, 30, 0),
                 UserId = null
             },
             new ExpenseItem
@@ -57,7 +55,7 @@ public class ExpenseItemTypeConfiguration : IEntityTypeConfiguration<ExpenseItem
                 ExpenseCategoryId = 2,
                 Amount = 2.75m,
                 CurrencyId = 1,
-                TransactionDate = new DateTime(2026, 06, 19, 12, 36, 10, DateTimeKind.Utc),
+                TransactionDate = new DateTime(2026, 06, 19, 12, 36, 10),
                 UserId = null
             }
         );

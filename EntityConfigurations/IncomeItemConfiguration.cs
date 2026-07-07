@@ -18,9 +18,7 @@ public class IncomeItemConfiguration : IEntityTypeConfiguration<IncomeItem>
             .IsRequired();
 
         builder.Property(i => i.TransactionDate)
-            .HasConversion(v => v.ToUniversalTime(), 
-                           v => DateTime.SpecifyKind(v, DateTimeKind.Utc))
-            .HasColumnType("TIMESTAMPTZ")
+            .HasColumnType("TIMESTAMP")
             .IsRequired();
 
         builder.HasOne(i => i.IncomeCategory)
