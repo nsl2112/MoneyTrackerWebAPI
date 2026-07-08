@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +13,7 @@ namespace MoneyTracker
         [HttpGet]
         public async Task<IActionResult> GetExpenses([FromQuery] ExpenseQuerryParams? queryParams)
         {
-            var expenses = context.ExpenseItems
+            var expenses = await context.ExpenseItems
                 .Include(e => e.ExpenseCategory)
                 .Include(e => e.Currency)
                 .ApplyFilters(queryParams)
@@ -23,9 +24,9 @@ namespace MoneyTracker
                     Amount = e.Amount,
                     CurrencyName = e.Currency.Code,
                     TransactionDate = e.TransactionDate
-                });
+                })
+                .ToListAsync();
 
-            await expenses.ToListAsync();
             return Ok(expenses);
         }
 
@@ -57,23 +58,89 @@ namespace MoneyTracker
         [HttpGet("total")]
         public async Task<IActionResult> GetTotalExpenses([FromQuery] ExpenseQuerryParams? queryParams)
         {
-            var expenses = context.ExpenseItems
-                .AsQueryable()
-                .ApplyFilters(queryParams);
+            var totalExpenses = context.ExpenseItems
+                .ApplyFilters(queryParams)
+                .SumAsync(e => e.Amount);
 
-            var totalExpenses = await expenses.SumAsync(e => e.Amount);
             return Ok(totalExpenses);
         }
 
-        [HttpGet("average")]
-        public async Task<IActionResult> GetAverageExpenses([FromQuery] ExpenseQuerryParams? queryParams)
+        [HttpGet("total-by-category")]
+        public async Task<IActionResult> GetTotalExpensesByCategory([FromQuery] ExpenseQuerryParams? queryParams)
         {
-            var expenses = context.ExpenseItems
-                .AsQueryable()
-                .ApplyFilters(queryParams);
+            var totalExpensesByCategory = await context.ExpenseItems
+                .Include(e => e.ExpenseCategory)
+                .ApplyFilters(queryParams)
+                .GroupBy(e => e.ExpenseCategory.Name)
+                .Select(g => new
+                {
+                    ExpenseCategoryName = g.Key,
+                    TotalAmount = g.Sum(e => e.Amount)
+                })
+                .OrderBy(g => g.TotalAmount)
+                .ToListAsync();
 
-            var averageExpenses = await expenses.AverageAsync(e => e.Amount);
-            return Ok(averageExpenses);
+            return Ok(totalExpensesByCategory);
+        }
+
+        [HttpGet("total-by-time")]
+        public async Task<IActionResult> GetTotalExpensesByTime(string timePeriod)
+        {
+            var totalExpensesByTime = context.Database
+                .SqlQuery<ExpenseTotalByTimeDTO>($"""
+                    SELECT date_trunc({timePeriod}, "TransactionDate") AS "TimePeriod", SUM("Amount") AS "TotalAmount" 
+                    FROM "ExpenseItems"
+                    GROUP BY "TimePeriod"
+                    ORDER BY "TimePeriod"
+                    """);
+                
+            if (timePeriod == "day")
+            {
+                var totalExpensesByDay = await totalExpensesByTime
+                    .Select(e => new
+                    {
+                        Day = e.TimePeriod.ToString("yyyy-MM-dd"),
+                        TotalAmount = e.TotalAmount
+                    })
+                    .ToListAsync();
+
+                return Ok(totalExpensesByDay);    
+            }
+            else if (timePeriod == "week")
+            {
+                var totalExpensesByWeek = await totalExpensesByTime
+                    .Select(e => new
+                    {
+                        Week = $"{e.TimePeriod.Year}-W{CultureInfo.CurrentCulture.Calendar.GetWeekOfYear(e.TimePeriod, CalendarWeekRule.FirstDay, DayOfWeek.Monday)}",
+                        TotalAmount = e.TotalAmount
+                    })
+                    .ToListAsync();
+                return Ok(totalExpensesByWeek);
+            }
+            else if (timePeriod == "month")
+            {
+                var totalExpensesByMonth = await totalExpensesByTime
+                    .Select(e => new
+                    {
+                        Month = new DateTime(e.TimePeriod.Year, e.TimePeriod.Month, 1).ToString("yyyy-MM"),
+                        TotalAmount = e.TotalAmount
+                    })
+                    .ToListAsync();
+                return Ok(totalExpensesByMonth);
+            }
+            else if (timePeriod == "year")
+            {
+                var totalExpensesByYear = await totalExpensesByTime
+                    .Select(e => new
+                    {
+                        Year = new DateTime(e.TimePeriod.Year, 1, 1).ToString("yyyy"),
+                        TotalAmount = e.TotalAmount
+                    })
+                    .ToListAsync();
+                return Ok(totalExpensesByYear);
+            }
+
+            return BadRequest("Invalid time period. Please use 'day', 'week', 'month', or 'year'.");
         }
 
         [HttpPost]
