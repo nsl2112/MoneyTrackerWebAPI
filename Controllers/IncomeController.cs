@@ -1,9 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace MoneyTracker
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class IncomeController(AppDbContext context) : ControllerBase
@@ -78,7 +80,8 @@ namespace MoneyTracker
                 IncomeCategoryId = incomeDTO.IncomeCategoryId,
                 Amount = incomeDTO.Amount,
                 CurrencyId = incomeDTO.CurrencyId,
-                TransactionDate = incomeDTO.TransactionDate
+                TransactionDate = incomeDTO.TransactionDate,
+                UserId = User.FindFirst("sub")?.Value,
             };
 
             context.IncomeItems.Add(income);
