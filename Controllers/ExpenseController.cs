@@ -152,7 +152,8 @@ namespace MoneyTracker
                 ExpenseCategoryId = expenseDTO.ExpenseCategoryId,
                 Amount = expenseDTO.Amount,
                 CurrencyId = expenseDTO.CurrencyId,
-                TransactionDate = expenseDTO.TransactionDate
+                TransactionDate = expenseDTO.TransactionDate,
+                UserId = User.FindFirst("sub")?.Value
             };
             context.ExpenseItems.Add(expense);
             await context.SaveChangesAsync();

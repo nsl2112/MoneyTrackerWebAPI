@@ -25,10 +25,11 @@ try
           .Enrich.FromLogContext()
           .WriteTo.Console();
     });
+    builder.Services.AddHttpContextAccessor();
+    builder.Services.AddTransient<ITenantService, TenantService>();
 
     builder.Services.AddDbContext<AppDbContext>(options => 
-        options.UseNpgsql(builder.Configuration.GetConnectionString("PostgreSqlConnection"))
-               .LogTo(Console.WriteLine, LogLevel.Information));
+        options.UseNpgsql(builder.Configuration.GetConnectionString("PostgreSqlConnection")));
 
     builder.Services.AddIdentity<AppUser, IdentityRole>()
                     .AddEntityFrameworkStores<AppDbContext>();

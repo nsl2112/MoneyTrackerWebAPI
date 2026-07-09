@@ -4,8 +4,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MoneyTracker;
 
-public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbContext(options)
+public class AppDbContext: IdentityDbContext
 {
+    public string TentantId { get; private set; } = null!;
+    
+    public AppDbContext(DbContextOptions<AppDbContext> options, ITenantService tenantService) : base(options)
+    {
+        TentantId = tenantService.GetCurrentTenantId();
+    }
     public DbSet<ExpenseItem> ExpenseItems { get; set; }
     public DbSet<ExpenseCategory> ExpenseCategories { get; set; }
 
