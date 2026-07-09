@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -60,6 +61,83 @@ namespace MoneyTracker
                 .ApplyFilters(queryParams)
                 .SumAsync(i => i.Amount);
             return Ok(total);
+        }
+
+        [HttpGet("total-by-category")]
+        public async Task<IActionResult> GetTotalIncomeByCategory(IncomeQuerryParams? queryParams)
+        {
+            var totalByCategory = await context.IncomeItems
+                .Include(i => i.IncomeCategory)
+                .ApplyFilters(queryParams)
+                .GroupBy(i => i.IncomeCategory.Name)
+                .Select(g => new
+                {
+                    IncomeCategory = g.Key,
+                    TotalAmount = g.Sum(i => i.Amount)
+                })
+                .ToListAsync();
+
+            return Ok(totalByCategory);
+        }
+
+        [HttpGet("total-by-time")]
+        public async Task<IActionResult> GetTotalIncomesByTime(string timePeriod)
+        {
+            var totalIncomesByTime = context.Database
+                .SqlQuery<IncomeTotalByTimeDTO>($"""
+                    SELECT date_trunc({timePeriod}, "TransactionDate") AS "TimePeriod", SUM("Amount") AS "TotalAmount" 
+                    FROM "IncomeItems"
+                    GROUP BY "TimePeriod"
+                    ORDER BY "TimePeriod"
+                    """);
+                
+            if (timePeriod == "day")
+            {
+                var totalIncomesByDay = await totalIncomesByTime
+                    .Select(i => new
+                    {
+                        Day = i.TimePeriod.ToString("yyyy-MM-dd"),
+                        TotalAmount = i.TotalAmount
+                    })
+                    .ToListAsync();
+
+                return Ok(totalIncomesByDay);    
+            }
+            else if (timePeriod == "week")
+            {
+                var totalIncomesByWeek = await totalIncomesByTime
+                    .Select(i => new
+                    {
+                        Week = $"{i.TimePeriod.Year}-W{CultureInfo.CurrentCulture.Calendar.GetWeekOfYear(i.TimePeriod, CalendarWeekRule.FirstDay, DayOfWeek.Monday)}",
+                        TotalAmount = i.TotalAmount
+                    })
+                    .ToListAsync();
+                return Ok(totalIncomesByWeek);
+            }
+            else if (timePeriod == "month")
+            {
+                var totalIncomesByMonth = await totalIncomesByTime
+                    .Select(i => new
+                    {
+                        Month = new DateTime(i.TimePeriod.Year, i.TimePeriod.Month, 1).ToString("yyyy-MM"),
+                        TotalAmount = i.TotalAmount
+                    })
+                    .ToListAsync();
+                return Ok(totalIncomesByMonth);
+            }
+            else if (timePeriod == "year")
+            {
+                var totalIncomesByYear = await totalIncomesByTime
+                    .Select(i => new
+                    {
+                        Year = new DateTime(i.TimePeriod.Year, 1, 1).ToString("yyyy"),
+                        TotalAmount = i.TotalAmount
+                    })
+                    .ToListAsync();
+                return Ok(totalIncomesByYear);
+            }
+
+            return BadRequest("Invalid time period. Please use 'day', 'week', 'month', or 'year'.");
         }
 
         [HttpGet("average")]
