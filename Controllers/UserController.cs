@@ -15,11 +15,6 @@ namespace MoneyTracker
         [HttpPost("register")]
         public async Task<IActionResult> Register(UserCreateDTO userDTO)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-            
             var existUser = await context.Users.FirstOrDefaultAsync(u => u.Email == userDTO.Email);
             if (existUser != null)
             {
@@ -48,11 +43,6 @@ namespace MoneyTracker
         [HttpPost("login")]
         public async Task<IActionResult> Login(UserLoginDTO loginDTO)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
             var user = await userManager.FindByEmailAsync(loginDTO.Email);
             if (user == null || !await userManager.CheckPasswordAsync(user, loginDTO.Password))
             {

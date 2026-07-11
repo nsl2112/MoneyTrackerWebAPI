@@ -59,7 +59,10 @@ try
     });
     builder.Services.AddAuthorization();
     
-    builder.Services.AddControllers();
+    builder.Services.AddControllers(options =>
+    {
+        options.Filters.Add<ValidationActionFitler>();
+    });
     // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
     builder.Services.AddOpenApi();
 
