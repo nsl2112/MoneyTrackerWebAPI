@@ -90,6 +90,7 @@ namespace MoneyTracker
                 .SqlQuery<ExpenseTotalByTimeDTO>($"""
                     SELECT date_trunc({timePeriod}, "TransactionDate") AS "TimePeriod", SUM("Amount") AS "TotalAmount" 
                     FROM "ExpenseItems"
+                    WHERE "UserId" = {User.FindFirst("sub")?.Value}
                     GROUP BY "TimePeriod"
                     ORDER BY "TimePeriod"
                     """);

@@ -87,6 +87,7 @@ namespace MoneyTracker
                 .SqlQuery<IncomeTotalByTimeDTO>($"""
                     SELECT date_trunc({timePeriod}, "TransactionDate") AS "TimePeriod", SUM("Amount") AS "TotalAmount" 
                     FROM "IncomeItems"
+                    WHERE "UserId" = {User.FindFirst("sub")?.Value}
                     GROUP BY "TimePeriod"
                     ORDER BY "TimePeriod"
                     """);

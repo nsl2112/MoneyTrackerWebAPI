@@ -9,8 +9,7 @@ namespace MoneyTracker
     [ApiController]
     public class UserController(AppDbContext context, 
                                 UserManager<AppUser> userManager,
-                                ITokenService tokenService) 
-        : ControllerBase
+                                ITokenService tokenService) : ControllerBase
     {
         [HttpPost("register")]
         public async Task<IActionResult> Register(UserCreateDTO userDTO)
