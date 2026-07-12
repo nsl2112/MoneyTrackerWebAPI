@@ -58,11 +58,11 @@ namespace MoneyTracker
         [HttpGet("total")]
         public async Task<IActionResult> GetTotalExpenses([FromQuery] ExpenseQuerryParams? queryParams)
         {
-            var totalExpenses = context.ExpenseItems
+            var totalExpenses = await context.ExpenseItems
                 .ApplyFilters(queryParams)
                 .SumAsync(e => e.Amount);
 
-            return Ok(totalExpenses);
+            return Ok(new { Message = "Total expenses", TotalAmount = totalExpenses });
         }
 
         [HttpGet("total-by-category")]
@@ -175,6 +175,7 @@ namespace MoneyTracker
             item.Amount = expense.Amount;
             item.CurrencyId = expense.CurrencyId;
             item.TransactionDate = expense.TransactionDate;
+            
 
             context.ExpenseItems.Update(item);
             await context.SaveChangesAsync();

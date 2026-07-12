@@ -12,7 +12,7 @@ namespace MoneyTracker
     public class IncomeController(AppDbContext context) : ControllerBase
     {
         [HttpGet]
-        public async Task<IActionResult> GetIncomes(IncomeQuerryParams? queryParams)
+        public async Task<IActionResult> GetIncomes([FromQuery] IncomeQuerryParams? queryParams)
         {
             var incomes = await context.IncomeItems
                 .Include(i => i.IncomeCategory)
@@ -55,16 +55,16 @@ namespace MoneyTracker
         }
 
         [HttpGet("total")]
-        public async Task<IActionResult> GetTotalIncome(IncomeQuerryParams? queryParams)
+        public async Task<IActionResult> GetTotalIncome([FromQuery] IncomeQuerryParams? queryParams)
         {
             var total = await context.IncomeItems
                 .ApplyFilters(queryParams)
                 .SumAsync(i => i.Amount);
-            return Ok(total);
+            return Ok(new { Message = "Total income", TotalAmount = total });
         }
 
         [HttpGet("total-by-category")]
-        public async Task<IActionResult> GetTotalIncomeByCategory(IncomeQuerryParams? queryParams)
+        public async Task<IActionResult> GetTotalIncomeByCategory([FromQuery] IncomeQuerryParams? queryParams)
         {
             var totalByCategory = await context.IncomeItems
                 .Include(i => i.IncomeCategory)
@@ -81,7 +81,7 @@ namespace MoneyTracker
         }
 
         [HttpGet("total-by-time")]
-        public async Task<IActionResult> GetTotalIncomesByTime(string timePeriod)
+        public async Task<IActionResult> GetTotalIncomesByTime([FromQuery] string timePeriod)
         {
             var totalIncomesByTime = context.Database
                 .SqlQuery<IncomeTotalByTimeDTO>($"""
@@ -142,7 +142,7 @@ namespace MoneyTracker
         }
 
         [HttpGet("average")]
-        public async Task<IActionResult> GetAverageIncome(IncomeQuerryParams? queryParams)
+        public async Task<IActionResult> GetAverageIncome([FromQuery] IncomeQuerryParams? queryParams)
         {
             var average = await context.IncomeItems
                 .ApplyFilters(queryParams)
