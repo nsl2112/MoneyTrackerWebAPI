@@ -2,11 +2,6 @@ using System;
 
 namespace MoneyTracker;
 
-public interface ITenantService
-{
-    string GetCurrentTenantId();
-}
-
 public class TenantService(IHttpContextAccessor httpContextAccessor, ILogger<TenantService> logger) : ITenantService
 {
     public string GetCurrentTenantId()
