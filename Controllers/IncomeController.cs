@@ -12,16 +12,16 @@ namespace MoneyTracker
     public class IncomeController(AppDbContext context) : ControllerBase
     {
         [HttpGet]
-        public async Task<IActionResult> GetIncomes([FromQuery] IncomeQuerryParams? queryParams)
+        public async Task<IActionResult> GetIncomes([FromQuery] TransactionQueryParams? queryParams)
         {
             var incomes = await context.IncomeItems
-                .Include(i => i.IncomeCategory)
+                .Include(i => i.TransactionCategory)
                 .Include(i => i.Currency)
                 .ApplyFilters(queryParams)
-                .Select(i => new IncomeGetDTO
+                .Select(i => new TransactionGetDTO
                 {
                     Description = i.Description,
-                    IncomeCategoryName = i.IncomeCategory.Name,
+                    CategoryName = i.TransactionCategory.Name,
                     Amount = i.Amount,
                     CurrencyName = i.Currency.Code,
                     TransactionDate = i.TransactionDate
@@ -35,12 +35,12 @@ namespace MoneyTracker
         {
             var income = await context.IncomeItems
                 .Where(i => i.Id == id)
-                .Include(i => i.IncomeCategory)
+                .Include(i => i.TransactionCategory)
                 .Include(i => i.Currency)
-                .Select(i => new IncomeGetDTO
+                .Select(i => new TransactionGetDTO
                 {
                     Description = i.Description,
-                    IncomeCategoryName = i.IncomeCategory.Name,
+                    CategoryName = i.TransactionCategory.Name,
                     Amount = i.Amount,
                     CurrencyName = i.Currency.Code,
                     TransactionDate = i.TransactionDate
@@ -55,7 +55,7 @@ namespace MoneyTracker
         }
 
         [HttpGet("total")]
-        public async Task<IActionResult> GetTotalIncome([FromQuery] IncomeQuerryParams? queryParams)
+        public async Task<IActionResult> GetTotalIncome([FromQuery] TransactionQueryParams? queryParams)
         {
             var total = await context.IncomeItems
                 .ApplyFilters(queryParams)
@@ -64,12 +64,12 @@ namespace MoneyTracker
         }
 
         [HttpGet("total-by-category")]
-        public async Task<IActionResult> GetTotalIncomeByCategory([FromQuery] IncomeQuerryParams? queryParams)
+        public async Task<IActionResult> GetTotalIncomeByCategory([FromQuery] TransactionQueryParams? queryParams)
         {
             var totalByCategory = await context.IncomeItems
-                .Include(i => i.IncomeCategory)
+                .Include(i => i.TransactionCategory)
                 .ApplyFilters(queryParams)
-                .GroupBy(i => i.IncomeCategory.Name)
+                .GroupBy(i => i.TransactionCategory.Name)
                 .Select(g => new
                 {
                     IncomeCategory = g.Key,
@@ -84,7 +84,7 @@ namespace MoneyTracker
         public async Task<IActionResult> GetTotalIncomesByTime([FromQuery] string timePeriod)
         {
             var totalIncomesByTime = context.Database
-                .SqlQuery<IncomeTotalByTimeDTO>($"""
+                .SqlQuery<TransactionTotalByTimeDTO>($"""
                     SELECT date_trunc({timePeriod}, "TransactionDate") AS "TimePeriod", SUM("Amount") AS "TotalAmount" 
                     FROM "IncomeItems"
                     WHERE "UserId" = {User.FindFirst("sub")?.Value}
@@ -142,7 +142,7 @@ namespace MoneyTracker
         }
 
         [HttpGet("average")]
-        public async Task<IActionResult> GetAverageIncome([FromQuery] IncomeQuerryParams? queryParams)
+        public async Task<IActionResult> GetAverageIncome([FromQuery] TransactionQueryParams? queryParams)
         {
             var average = await context.IncomeItems
                 .ApplyFilters(queryParams)
@@ -151,12 +151,12 @@ namespace MoneyTracker
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateIncome(IncomeCreateDTO incomeDTO)
+        public async Task<IActionResult> CreateIncome(TransactionCreateDTO incomeDTO)
         {
             var income = new IncomeItem
             {
                 Description = incomeDTO.Description,
-                IncomeCategoryId = incomeDTO.IncomeCategoryId,
+                TransactionCategoryId = incomeDTO.CategoryId,
                 Amount = incomeDTO.Amount,
                 CurrencyId = incomeDTO.CurrencyId,
                 TransactionDate = incomeDTO.TransactionDate,
@@ -170,7 +170,7 @@ namespace MoneyTracker
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateIncome(string id, IncomeCreateDTO income)
+        public async Task<IActionResult> UpdateIncome(string id, TransactionCreateDTO income)
         {
             var item = await context.IncomeItems.FindAsync(id);
             if (item == null)
@@ -179,7 +179,7 @@ namespace MoneyTracker
             }
 
             item.Description = income.Description;
-            item.IncomeCategoryId = income.IncomeCategoryId;
+            item.TransactionCategoryId = income.CategoryId;
             item.Amount = income.Amount;
             item.CurrencyId = income.CurrencyId;
             item.TransactionDate = income.TransactionDate;

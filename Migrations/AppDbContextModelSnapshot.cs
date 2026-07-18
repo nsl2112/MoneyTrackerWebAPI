@@ -256,7 +256,7 @@ namespace MoneyTracker.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Currencies");
+                    b.ToTable("Currencies", (string)null);
 
                     b.HasData(
                         new
@@ -306,7 +306,7 @@ namespace MoneyTracker.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ExpenseCategories");
+                    b.ToTable("ExpenseCategories", (string)null);
 
                     b.HasData(
                         new
@@ -394,7 +394,7 @@ namespace MoneyTracker.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("ExpenseItems");
+                    b.ToTable("ExpenseItems", (string)null);
 
                     b.HasData(
                         new
@@ -432,7 +432,7 @@ namespace MoneyTracker.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("IncomeCategories");
+                    b.ToTable("IncomeCategories", (string)null);
 
                     b.HasData(
                         new
@@ -495,7 +495,7 @@ namespace MoneyTracker.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("IncomeItems");
+                    b.ToTable("IncomeItems", (string)null);
                 });
 
             modelBuilder.Entity("MoneyTracker.AppUser", b =>

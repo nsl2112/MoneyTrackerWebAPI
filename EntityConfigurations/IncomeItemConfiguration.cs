@@ -22,9 +22,12 @@ public class IncomeItemConfiguration : IEntityTypeConfiguration<IncomeItem>
             .HasColumnType("TIMESTAMP")
             .IsRequired();
 
-        builder.HasOne(i => i.IncomeCategory)
+        builder.Property(i => i.TransactionCategoryId)
+            .HasColumnName("IncomeCategoryId");
+
+        builder.HasOne(i => i.TransactionCategory)
             .WithMany()
-            .HasForeignKey(i => i.IncomeCategoryId)
+            .HasForeignKey(i => i.TransactionCategoryId)
             .OnDelete(DeleteBehavior.Restrict)
             .IsRequired();
 

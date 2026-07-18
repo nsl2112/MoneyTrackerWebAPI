@@ -11,16 +11,16 @@ namespace MoneyTracker
     public class ExpenseController(AppDbContext context) : ControllerBase
     {
         [HttpGet]
-        public async Task<IActionResult> GetExpenses([FromQuery] ExpenseQuerryParams? queryParams)
+        public async Task<IActionResult> GetExpenses([FromQuery] TransactionQueryParams? queryParams)
         {
             var expenses = await context.ExpenseItems
-                .Include(e => e.ExpenseCategory)
+                .Include(e => e.TransactionCategory)
                 .Include(e => e.Currency)
                 .ApplyFilters(queryParams)
-                .Select(e => new ExpenseGetDTO
+                .Select(e => new TransactionGetDTO
                 {
                     Description = e.Description,
-                    ExpenseCategoryName = e.ExpenseCategory.Name,
+                    CategoryName = e.TransactionCategory.Name,
                     Amount = e.Amount,
                     CurrencyName = e.Currency.Code,
                     TransactionDate = e.TransactionDate
@@ -34,13 +34,13 @@ namespace MoneyTracker
         public async Task<IActionResult> GetExpense(string id)
         {
             var expense = await context.ExpenseItems
-                .Include(e => e.ExpenseCategory)
+                .Include(e => e.TransactionCategory)
                 .Include(e => e.Currency)
                 .Where(e => e.Id == id)
-                .Select(e => new ExpenseGetDTO
+                .Select(e => new TransactionGetDTO
                 {
                     Description = e.Description,
-                    ExpenseCategoryName = e.ExpenseCategory.Name,
+                    CategoryName = e.TransactionCategory.Name,
                     Amount = e.Amount,
                     CurrencyName = e.Currency.Code,
                     TransactionDate = e.TransactionDate
@@ -56,7 +56,7 @@ namespace MoneyTracker
         }
 
         [HttpGet("total")]
-        public async Task<IActionResult> GetTotalExpenses([FromQuery] ExpenseQuerryParams? queryParams)
+        public async Task<IActionResult> GetTotalExpenses([FromQuery] TransactionQueryParams? queryParams)
         {
             var totalExpenses = await context.ExpenseItems
                 .ApplyFilters(queryParams)
@@ -66,12 +66,12 @@ namespace MoneyTracker
         }
 
         [HttpGet("total-by-category")]
-        public async Task<IActionResult> GetTotalExpensesByCategory([FromQuery] ExpenseQuerryParams? queryParams)
+        public async Task<IActionResult> GetTotalExpensesByCategory([FromQuery] TransactionQueryParams? queryParams)
         {
             var totalExpensesByCategory = await context.ExpenseItems
-                .Include(e => e.ExpenseCategory)
+                .Include(e => e.TransactionCategory)
                 .ApplyFilters(queryParams)
-                .GroupBy(e => e.ExpenseCategory.Name)
+                .GroupBy(e => e.TransactionCategory.Name)
                 .Select(g => new
                 {
                     ExpenseCategoryName = g.Key,
@@ -87,7 +87,7 @@ namespace MoneyTracker
         public async Task<IActionResult> GetTotalExpensesByTime(string timePeriod)
         {
             var totalExpensesByTime = context.Database
-                .SqlQuery<ExpenseTotalByTimeDTO>($"""
+                .SqlQuery<TransactionTotalByTimeDTO>($"""
                     SELECT date_trunc({timePeriod}, "TransactionDate") AS "TimePeriod", SUM("Amount") AS "TotalAmount" 
                     FROM "ExpenseItems"
                     WHERE "UserId" = {User.FindFirst("sub")?.Value}
@@ -145,12 +145,12 @@ namespace MoneyTracker
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateExpense(ExpenseCreateDTO expenseDTO)
+        public async Task<IActionResult> CreateExpense(TransactionCreateDTO expenseDTO)
         {
             var expense = new ExpenseItem
             {
                 Description = expenseDTO.Description,
-                ExpenseCategoryId = expenseDTO.ExpenseCategoryId,
+                TransactionCategoryId = expenseDTO.CategoryId,
                 Amount = expenseDTO.Amount,
                 CurrencyId = expenseDTO.CurrencyId,
                 TransactionDate = expenseDTO.TransactionDate,
@@ -162,7 +162,7 @@ namespace MoneyTracker
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateExpense(string? id, ExpenseCreateDTO expense)
+        public async Task<IActionResult> UpdateExpense(string? id, TransactionCreateDTO expense)
         {
             var item = await context.ExpenseItems.FindAsync(id);
             if (item == null)
@@ -171,7 +171,7 @@ namespace MoneyTracker
             }
 
             item.Description = expense.Description;
-            item.ExpenseCategoryId = expense.ExpenseCategoryId;
+            item.TransactionCategoryId = expense.CategoryId;
             item.Amount = expense.Amount;
             item.CurrencyId = expense.CurrencyId;
             item.TransactionDate = expense.TransactionDate;

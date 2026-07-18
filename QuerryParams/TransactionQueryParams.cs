@@ -2,7 +2,7 @@ using System;
 
 namespace MoneyTracker;
 
-public class IncomeQuerryParams
+public class TransactionQueryParams
 {
     public string? Category {get; set;}
     public DateRange? DateRange {get; set;}
