@@ -31,3 +31,9 @@ public class TransactionTotalByTimeDTO
     public DateTime TimePeriod { get; set; }
     public decimal TotalAmount { get; set; }
 }
+
+public class TransactionTotalByTimeStringDTO
+{
+    public string TimePeriod {get; set;}
+    public decimal TotalAmount {get; set;}
+}

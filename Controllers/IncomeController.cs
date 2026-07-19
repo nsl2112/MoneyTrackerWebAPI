@@ -1,203 +1,86 @@
-using System.Globalization;
+using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace MoneyTracker
 {
     [Authorize]
     [Route("api/[controller]")]
     [ApiController]
-    public class IncomeController(AppDbContext context) : ControllerBase
+    public class IncomeController([FromKeyedServices("Income")] ITransaction incomeService) : ControllerBase
     {
         [HttpGet]
-        public async Task<IActionResult> GetIncomes([FromQuery] TransactionQueryParams? queryParams)
+        public async Task<ActionResult<IEnumerable<TransactionGetDTO>>> GetIncomes([FromQuery] TransactionQueryParams? queryParams)
         {
-            var incomes = await context.IncomeItems
-                .Include(i => i.TransactionCategory)
-                .Include(i => i.Currency)
-                .ApplyFilters(queryParams)
-                .Select(i => new TransactionGetDTO
-                {
-                    Description = i.Description,
-                    CategoryName = i.TransactionCategory.Name,
-                    Amount = i.Amount,
-                    CurrencyName = i.Currency.Code,
-                    TransactionDate = i.TransactionDate
-                })
-                .ToListAsync();
+            var incomes = await incomeService.GetTransactionsAsync(queryParams);
             return Ok(incomes);
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetIncome(string id)
+        public async Task<ActionResult<TransactionGetDTO>> GetIncome(string id)
         {
-            var income = await context.IncomeItems
-                .Where(i => i.Id == id)
-                .Include(i => i.TransactionCategory)
-                .Include(i => i.Currency)
-                .Select(i => new TransactionGetDTO
-                {
-                    Description = i.Description,
-                    CategoryName = i.TransactionCategory.Name,
-                    Amount = i.Amount,
-                    CurrencyName = i.Currency.Code,
-                    TransactionDate = i.TransactionDate
-                })
-                .FirstOrDefaultAsync();
-
+            var income = await incomeService.GetTransactionByIdAsync(id);
             if (income == null)
             {
                 return NotFound();
             }
+
             return Ok(income);
         }
 
         [HttpGet("total")]
-        public async Task<IActionResult> GetTotalIncome([FromQuery] TransactionQueryParams? queryParams)
+        public async Task<ActionResult<TransactionTotalByCategoryDTO>> GetTotalIncome([FromQuery] TransactionQueryParams? queryParams)
         {
-            var total = await context.IncomeItems
-                .ApplyFilters(queryParams)
-                .SumAsync(i => i.Amount);
-            return Ok(new { Message = "Total income", TotalAmount = total });
+            var total = await incomeService.GetTotalTransactionAsync(queryParams);
+            return Ok(total);
         }
 
         [HttpGet("total-by-category")]
-        public async Task<IActionResult> GetTotalIncomeByCategory([FromQuery] TransactionQueryParams? queryParams)
+        public async Task<ActionResult<IEnumerable<TransactionTotalByCategoryDTO>>> GetTotalIncomeByCategory([FromQuery] TransactionQueryParams? queryParams)
         {
-            var totalByCategory = await context.IncomeItems
-                .Include(i => i.TransactionCategory)
-                .ApplyFilters(queryParams)
-                .GroupBy(i => i.TransactionCategory.Name)
-                .Select(g => new
-                {
-                    IncomeCategory = g.Key,
-                    TotalAmount = g.Sum(i => i.Amount)
-                })
-                .ToListAsync();
-
+            var totalByCategory = await incomeService.GetTotalTransactionByCategoryAsync(queryParams);
             return Ok(totalByCategory);
         }
 
         [HttpGet("total-by-time")]
-        public async Task<IActionResult> GetTotalIncomesByTime([FromQuery] string timePeriod)
+        public async Task<ActionResult<IEnumerable<TransactionTotalByTimeStringDTO>>> GetTotalIncomesByTime([FromQuery] string timePeriod)
         {
-            var totalIncomesByTime = context.Database
-                .SqlQuery<TransactionTotalByTimeDTO>($"""
-                    SELECT date_trunc({timePeriod}, "TransactionDate") AS "TimePeriod", SUM("Amount") AS "TotalAmount" 
-                    FROM "IncomeItems"
-                    WHERE "UserId" = {User.FindFirst("sub")?.Value}
-                    GROUP BY "TimePeriod"
-                    ORDER BY "TimePeriod"
-                    """);
-                
-            if (timePeriod == "day")
-            {
-                var totalIncomesByDay = await totalIncomesByTime
-                    .Select(i => new
-                    {
-                        Day = i.TimePeriod.ToString("yyyy-MM-dd"),
-                        TotalAmount = i.TotalAmount
-                    })
-                    .ToListAsync();
+            var userId = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+            var totalIncomesByTime = await incomeService.GetTotalTransactionByTimeAsync(userId, timePeriod);
 
-                return Ok(totalIncomesByDay);    
-            }
-            else if (timePeriod == "week")
+            if (totalIncomesByTime == null)
             {
-                var totalIncomesByWeek = await totalIncomesByTime
-                    .Select(i => new
-                    {
-                        Week = $"{i.TimePeriod.Year}-W{CultureInfo.CurrentCulture.Calendar.GetWeekOfYear(i.TimePeriod, CalendarWeekRule.FirstDay, DayOfWeek.Monday)}",
-                        TotalAmount = i.TotalAmount
-                    })
-                    .ToListAsync();
-                return Ok(totalIncomesByWeek);
-            }
-            else if (timePeriod == "month")
-            {
-                var totalIncomesByMonth = await totalIncomesByTime
-                    .Select(i => new
-                    {
-                        Month = new DateTime(i.TimePeriod.Year, i.TimePeriod.Month, 1).ToString("yyyy-MM"),
-                        TotalAmount = i.TotalAmount
-                    })
-                    .ToListAsync();
-                return Ok(totalIncomesByMonth);
-            }
-            else if (timePeriod == "year")
-            {
-                var totalIncomesByYear = await totalIncomesByTime
-                    .Select(i => new
-                    {
-                        Year = new DateTime(i.TimePeriod.Year, 1, 1).ToString("yyyy"),
-                        TotalAmount = i.TotalAmount
-                    })
-                    .ToListAsync();
-                return Ok(totalIncomesByYear);
+                return BadRequest("Invalid time period. Please use 'day', 'week', 'month', or 'year'.");
             }
 
-            return BadRequest("Invalid time period. Please use 'day', 'week', 'month', or 'year'.");
-        }
-
-        [HttpGet("average")]
-        public async Task<IActionResult> GetAverageIncome([FromQuery] TransactionQueryParams? queryParams)
-        {
-            var average = await context.IncomeItems
-                .ApplyFilters(queryParams)
-                .AverageAsync(i => i.Amount);
-            return Ok(average);
+            return Ok(totalIncomesByTime);
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateIncome(TransactionCreateDTO incomeDTO)
+        public async Task<ActionResult> CreateIncome(TransactionCreateDTO incomeDTO)
         {
-            var income = new IncomeItem
-            {
-                Description = incomeDTO.Description,
-                TransactionCategoryId = incomeDTO.CategoryId,
-                Amount = incomeDTO.Amount,
-                CurrencyId = incomeDTO.CurrencyId,
-                TransactionDate = incomeDTO.TransactionDate,
-                UserId = User.FindFirst("sub")?.Value,
-            };
-
-            context.IncomeItems.Add(income);
-            await context.SaveChangesAsync();
-
+            var userId = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+            var income = await incomeService.CreateTransactionAsync(userId, incomeDTO);
             return CreatedAtAction(nameof(GetIncome), new { id = income.Id }, incomeDTO);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateIncome(string id, TransactionCreateDTO income)
+        public async Task<ActionResult> UpdateIncome(string id, TransactionCreateDTO income)
         {
-            var item = await context.IncomeItems.FindAsync(id);
-            if (item == null)
+            var updatedCount = await incomeService.UpdateTransactionAsync(id, income);
+            if (updatedCount == 0)
             {
                 return NotFound();
             }
-
-            item.Description = income.Description;
-            item.TransactionCategoryId = income.CategoryId;
-            item.Amount = income.Amount;
-            item.CurrencyId = income.CurrencyId;
-            item.TransactionDate = income.TransactionDate;
-
-            context.IncomeItems.Update(item);
-            await context.SaveChangesAsync();
 
             return NoContent();
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteIncome(string id)
+        public async Task<ActionResult> DeleteIncome(string id)
         {
-            var deleted = await context.IncomeItems
-                .Where(i => i.Id == id)
-                .ExecuteDeleteAsync();
-                
-            if (deleted == 0)
+            var deletedCount = await incomeService.DeleteTransactionAsync(id);
+            if (deletedCount == 0)
             {
                 return NotFound();
             }

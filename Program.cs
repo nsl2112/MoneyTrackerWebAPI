@@ -66,6 +66,9 @@ try
     // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
     builder.Services.AddOpenApi();
 
+    builder.Services.AddKeyedScoped<ITransaction, TransactionService<ExpenseItem>>("Expense");
+    builder.Services.AddKeyedScoped<ITransaction, TransactionService<IncomeItem>>("Income");
+
     var app = builder.Build();
 
     // Configure the HTTP request pipeline.
