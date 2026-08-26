@@ -11,7 +11,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace MoneyTracker.Migrations
 {
-    [DbContext(typeof(AppDbContext))]
+    [DbContext(typeof(TenantDbContext))]
     [Migration("20260706074510_AddIncomeEntity")]
     partial class AddIncomeEntity
     {

@@ -1,19 +1,29 @@
 using System;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace MoneyTracker;
 
-public class TenantService(IHttpContextAccessor httpContextAccessor, ILogger<TenantService> logger) : ITenantService
+public class TenantService(
+    IHttpContextAccessor httpContextAccessor,
+    CatalogDbContext catalogDbContext,
+    ILogger<TenantService> logger) 
+    : ITenantService
 {
-    public string GetCurrentTenantId()
+    public string? GetCurrentTenantId()
     {
-        var tenantId = httpContextAccessor.HttpContext?.User.FindFirst("sub")?.Value;
-        if (string.IsNullOrEmpty(tenantId))
+        var userEmail = httpContextAccessor.HttpContext?.User.FindFirst(JwtRegisteredClaimNames.Email)?.Value;
+        if (string.IsNullOrEmpty(userEmail))
         {
-            logger.LogError("Tenant ID not found in the current context.");
-            return string.Empty;
+            logger.LogError("User email not found in the current context.");
+            return null;
         }
 
-        logger.LogInformation($"Retrieved Tenant ID: {tenantId}");
+        logger.LogInformation($"Retrieved User Email: {userEmail}");
+        
+        var tenantId = catalogDbContext.Tenants
+            .Where(t => t.Users.Any(u => u.Email == userEmail))
+            .Select(t => t.Id)
+            .FirstOrDefault();
 
         return tenantId;
     }

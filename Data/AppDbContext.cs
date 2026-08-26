@@ -1,23 +1,22 @@
 using System;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace MoneyTracker;
 
-public class AppDbContext: IdentityDbContext
+public class TenantDbContext(
+    DbContextOptions<TenantDbContext> options,
+    IOptions<ConnectionStrings> connectionStringsOptions,
+    ITenantService tenantService)
+    : DbContext(options)
 {
-    public string TentantId { get; private set; } = null!; 
     public DbSet<ExpenseItem> ExpenseItems { get; set; }
     public DbSet<ExpenseCategory> ExpenseCategories { get; set; }
     public DbSet<IncomeItem> IncomeItems { get; set; }
     public DbSet<IncomeCategory> IncomeCategories { get; set; } 
     public DbSet<Currency> Currencies { get; set; }
     
-    public AppDbContext(DbContextOptions<AppDbContext> options, ITenantService tenantService) : base(options)
-    {
-        TentantId = tenantService.GetCurrentTenantId();
-    }
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -27,6 +26,12 @@ public class AppDbContext: IdentityDbContext
         modelBuilder.ApplyConfiguration(new ExpenseItemTypeConfiguration());
         modelBuilder.ApplyConfiguration(new IncomeCategoryConfiguration());
         modelBuilder.ApplyConfiguration(new IncomeItemConfiguration());
-        modelBuilder.ApplyConfiguration(new RoleConfiguration());
+    }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        base.OnConfiguring(optionsBuilder);
+        optionsBuilder.UseNpgsql(connectionStringsOptions.Value.PostgreSqlConnection 
+            + $"; Search Path=Tenant_{tenantService.GetCurrentTenantId()};");
     }
 }

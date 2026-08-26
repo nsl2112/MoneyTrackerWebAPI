@@ -4,10 +4,12 @@ using Npgsql;
 
 namespace MoneyTracker;
 
-public class TransactionService<T>(AppDbContext context) : ITransaction 
+public class TransactionService<T>(TenantDbContext context) : ITransaction 
     where T : TransactionItem, new()
 {
-    public async Task<TransactionItem> CreateTransactionAsync(string userID, TransactionCreateDTO transactionCreateDTO)
+    public async Task<TransactionItem> CreateTransactionAsync(
+        string userID, 
+        TransactionCreateDTO transactionCreateDTO)
     {
         var transaction = new T
         {
@@ -31,7 +33,8 @@ public class TransactionService<T>(AppDbContext context) : ITransaction
             .ExecuteDeleteAsync();;
     }
 
-    public async Task<TransactionTotalByCategoryDTO> GetTotalTransactionAsync([FromQuery] TransactionQueryParams? queryParams)
+    public async Task<TransactionTotalByCategoryDTO> GetTotalTransactionAsync(
+        [FromQuery] TransactionQueryParams? queryParams)
     {
         var totalAmount = await context.Set<T>()
             .ApplyFilters(queryParams)
@@ -44,7 +47,8 @@ public class TransactionService<T>(AppDbContext context) : ITransaction
         };
     }
 
-    public async Task<IEnumerable<TransactionTotalByCategoryDTO>> GetTotalTransactionByCategoryAsync([FromQuery] TransactionQueryParams? queryParams)
+    public async Task<IEnumerable<TransactionTotalByCategoryDTO>> GetTotalTransactionByCategoryAsync(
+        [FromQuery] TransactionQueryParams? queryParams)
     {
         var totalTransactionByCategory = await context.Set<T>()
             .Include(e => e.TransactionCategory)
@@ -61,7 +65,9 @@ public class TransactionService<T>(AppDbContext context) : ITransaction
         return totalTransactionByCategory;
     }
 
-    public async Task<IEnumerable<TransactionTotalByTimeStringDTO>?> GetTotalTransactionByTimeAsync(string userID, string timePeriod)
+    public async Task<IEnumerable<TransactionTotalByTimeStringDTO>?> GetTotalTransactionByTimeAsync(
+        string userID, 
+        string timePeriod)
     {
         if (timePeriod != "day" && timePeriod != "week" &&
             timePeriod != "month" && timePeriod != "year")
@@ -109,7 +115,8 @@ public class TransactionService<T>(AppDbContext context) : ITransaction
         return transaction;
     }
 
-    public async Task<IEnumerable<TransactionGetDTO>> GetTransactionsAsync([FromQuery] TransactionQueryParams? queryParams)
+    public async Task<IEnumerable<TransactionGetDTO>> GetTransactionsAsync(
+        [FromQuery] TransactionQueryParams? queryParams)
     {
         var transactions = await context.Set<T>()
             .Include(e => e.TransactionCategory)
@@ -128,7 +135,9 @@ public class TransactionService<T>(AppDbContext context) : ITransaction
         return transactions;
     }
 
-    public async Task<int> UpdateTransactionAsync(string id, TransactionCreateDTO transactionUpdateDTO)
+    public async Task<int> UpdateTransactionAsync(
+        string id, 
+        TransactionCreateDTO transactionUpdateDTO)
     {
         var item = await context.Set<T>().FindAsync(id);
         if (item == null) return 0;

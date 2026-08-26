@@ -25,14 +25,17 @@ try
           .Enrich.FromLogContext()
           .WriteTo.Console();
     });
+
     builder.Services.AddHttpContextAccessor();
+    
     builder.Services.AddTransient<ITenantService, TenantService>();
-
-    builder.Services.AddDbContext<AppDbContext>(options => 
-        options.UseNpgsql(builder.Configuration.GetConnectionString("PostgreSqlConnection")));
-
+    
+    builder.Services.AddOptions<ConnectionStrings>().BindConfiguration(ConnectionStrings.SectionName);
+    builder.Services.AddDbContext<CatalogDbContext>();
+    builder.Services.AddDbContext<TenantDbContext>();
+    
     builder.Services.AddIdentity<AppUser, IdentityRole>()
-                    .AddEntityFrameworkStores<AppDbContext>();
+                    .AddEntityFrameworkStores<CatalogDbContext>();
     
     builder.Services.AddOptions<JWT>().BindConfiguration(JWT.SectionName);
     builder.Services.AddScoped<ITokenService, JWTTokenService>();

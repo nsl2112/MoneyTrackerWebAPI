@@ -11,7 +11,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace MoneyTracker.Migrations
 {
-    [DbContext(typeof(AppDbContext))]
+    [DbContext(typeof(TenantDbContext))]
     [Migration("20260629170120_SeedingRoles")]
     partial class SeedingRoles
     {

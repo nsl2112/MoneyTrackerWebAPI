@@ -6,8 +6,6 @@ namespace MoneyTracker;
 
 public class ExpenseItemTypeConfiguration : IEntityTypeConfiguration<ExpenseItem>
 {
-    private readonly AppDbContext context = null!;
-
     public void Configure(EntityTypeBuilder<ExpenseItem> builder)
     {      
         builder.HasKey(e => e.Id);
@@ -64,7 +62,5 @@ public class ExpenseItemTypeConfiguration : IEntityTypeConfiguration<ExpenseItem
                 UserId = null
             }
         );
-
-        builder.HasQueryFilter(e => e.UserId == context.TentantId);
     }
 }

@@ -9,21 +9,37 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace MoneyTracker.Migrations
+namespace MoneyTracker.Migrations.CatalogDb
 {
-    [DbContext(typeof(TenantDbContext))]
-    [Migration("20260620154402_ChangeTransactionDateColumnName")]
-    partial class ChangeTransactionDateColumnName
+    [DbContext(typeof(CatalogDbContext))]
+    [Migration("20260826163720_Implement schema multi-tenant")]
+    partial class Implementschemamultitenant
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
+                .HasDefaultSchema("catalog")
                 .HasAnnotation("ProductVersion", "9.0.6")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("AppTenantAppUser", b =>
+                {
+                    b.Property<string>("TenantsId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("UsersId")
+                        .HasColumnType("text");
+
+                    b.HasKey("TenantsId", "UsersId");
+
+                    b.HasIndex("UsersId");
+
+                    b.ToTable("AppTenantUser", "catalog");
+                });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
@@ -48,7 +64,21 @@ namespace MoneyTracker.Migrations
                         .IsUnique()
                         .HasDatabaseName("RoleNameIndex");
 
-                    b.ToTable("AspNetRoles", (string)null);
+                    b.ToTable("AspNetRoles", "catalog");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = "d3b29c0e-c962-4325-af66-d0dc00168245",
+                            Name = "Admin",
+                            NormalizedName = "ADMIN"
+                        },
+                        new
+                        {
+                            Id = "e07d669a-576c-4e94-a329-598bdd9ec066",
+                            Name = "User",
+                            NormalizedName = "USER"
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -73,7 +103,7 @@ namespace MoneyTracker.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("AspNetRoleClaims", (string)null);
+                    b.ToTable("AspNetRoleClaims", "catalog");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUser", b =>
@@ -142,7 +172,7 @@ namespace MoneyTracker.Migrations
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex");
 
-                    b.ToTable("AspNetUsers", (string)null);
+                    b.ToTable("AspNetUsers", "catalog");
 
                     b.HasDiscriminator().HasValue("IdentityUser");
 
@@ -171,7 +201,7 @@ namespace MoneyTracker.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("AspNetUserClaims", (string)null);
+                    b.ToTable("AspNetUserClaims", "catalog");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
@@ -193,7 +223,7 @@ namespace MoneyTracker.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("AspNetUserLogins", (string)null);
+                    b.ToTable("AspNetUserLogins", "catalog");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
@@ -208,7 +238,7 @@ namespace MoneyTracker.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("AspNetUserRoles", (string)null);
+                    b.ToTable("AspNetUserRoles", "catalog");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
@@ -227,66 +257,13 @@ namespace MoneyTracker.Migrations
 
                     b.HasKey("UserId", "LoginProvider", "Name");
 
-                    b.ToTable("AspNetUserTokens", (string)null);
+                    b.ToTable("AspNetUserTokens", "catalog");
                 });
 
-            modelBuilder.Entity("MoneyTracker.Currency", b =>
+            modelBuilder.Entity("MoneyTracker.AppTenant", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasMaxLength(3)
-                        .HasColumnType("character varying(3)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Currencies");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Code = "USD"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Code = "EUR"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Code = "GBP"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            Code = "JPY"
-                        },
-                        new
-                        {
-                            Id = 5,
-                            Code = "AUD"
-                        },
-                        new
-                        {
-                            Id = 6,
-                            Code = "VND"
-                        });
-                });
-
-            modelBuilder.Entity("MoneyTracker.ExpenseCategory", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    b.Property<string>("Id")
+                        .HasColumnType("text");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -295,95 +272,7 @@ namespace MoneyTracker.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ExpenseCategories");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Name = "Food"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Name = "Transportation"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Name = "Entertainment"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            Name = "Utilities"
-                        },
-                        new
-                        {
-                            Id = 5,
-                            Name = "Healthcare"
-                        },
-                        new
-                        {
-                            Id = 6,
-                            Name = "Education"
-                        },
-                        new
-                        {
-                            Id = 7,
-                            Name = "Personal Care"
-                        },
-                        new
-                        {
-                            Id = 8,
-                            Name = "Clothing"
-                        },
-                        new
-                        {
-                            Id = 9,
-                            Name = "Gifts"
-                        },
-                        new
-                        {
-                            Id = 10,
-                            Name = "Other"
-                        });
-                });
-
-            modelBuilder.Entity("MoneyTracker.ExpenseItem", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("text");
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("CurrencyId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<int>("ExpenseCategoryId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("TransactionDate")
-                        .HasColumnType("TIMESTAMPTZ");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CurrencyId");
-
-                    b.HasIndex("ExpenseCategoryId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("ExpenseItems");
+                    b.ToTable("Tenants", "catalog");
                 });
 
             modelBuilder.Entity("MoneyTracker.AppUser", b =>
@@ -399,6 +288,21 @@ namespace MoneyTracker.Migrations
                         .HasColumnType("text");
 
                     b.HasDiscriminator().HasValue("AppUser");
+                });
+
+            modelBuilder.Entity("AppTenantAppUser", b =>
+                {
+                    b.HasOne("MoneyTracker.AppTenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MoneyTracker.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UsersId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -450,32 +354,6 @@ namespace MoneyTracker.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("MoneyTracker.ExpenseItem", b =>
-                {
-                    b.HasOne("MoneyTracker.Currency", "Currency")
-                        .WithMany()
-                        .HasForeignKey("CurrencyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("MoneyTracker.ExpenseCategory", "ExpenseCategory")
-                        .WithMany()
-                        .HasForeignKey("ExpenseCategoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("MoneyTracker.AppUser", "AppUser")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.Navigation("AppUser");
-
-                    b.Navigation("Currency");
-
-                    b.Navigation("ExpenseCategory");
                 });
 #pragma warning restore 612, 618
         }

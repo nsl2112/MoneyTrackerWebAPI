@@ -6,7 +6,6 @@ namespace MoneyTracker;
 
 public class IncomeItemConfiguration : IEntityTypeConfiguration<IncomeItem>
 {
-    private readonly AppDbContext context = null!;
     public void Configure(EntityTypeBuilder<IncomeItem> builder)
     {
         builder.HasKey(i => i.Id);
@@ -41,7 +40,5 @@ public class IncomeItemConfiguration : IEntityTypeConfiguration<IncomeItem>
             .WithMany()
             .HasForeignKey(i => i.UserId)
             .OnDelete(DeleteBehavior.Cascade);
-
-        builder.HasQueryFilter(i => i.UserId == context.TentantId);
     }
 }

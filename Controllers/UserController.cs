@@ -7,7 +7,7 @@ namespace MoneyTracker
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class UserController(AppDbContext context, 
+    public class UserController(CatalogDbContext context, 
                                 UserManager<AppUser> userManager,
                                 ITokenService tokenService) : ControllerBase
     {
@@ -27,6 +27,11 @@ namespace MoneyTracker
                 Email = userDTO.Email,
                 UserName = userDTO.Email
             };
+
+            user.Tenants.Add(new AppTenant
+            {
+                Name = $"Tenant_{user.UserName}"
+            });
 
             var result = await userManager.CreateAsync(user, userDTO.Password);
             if (!result.Succeeded)
