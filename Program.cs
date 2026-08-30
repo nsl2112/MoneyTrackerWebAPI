@@ -72,6 +72,9 @@ try
 
     builder.Services.AddKeyedScoped<ITransaction, TransactionService<ExpenseItem>>("Expense");
     builder.Services.AddKeyedScoped<ITransaction, TransactionService<IncomeItem>>("Income");
+    builder.Services.AddScoped<ICurrencyService, CurrencyService>();
+    builder.Services.AddScoped<IExpenseCategoryService, ExpenseCategoryService>();
+    builder.Services.AddScoped<IIncomeCategoryService, IncomeCategoryService>();
 
     var app = builder.Build();
 
