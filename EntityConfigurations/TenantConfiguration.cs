@@ -9,8 +9,8 @@ public class TenantConfiguration : IEntityTypeConfiguration<AppTenant>
     public void Configure(EntityTypeBuilder<AppTenant> builder)
     {
         builder.HasKey(t => t.Id);
-
-        builder.Property(t => t.Name)
+        
+        builder.Property(t => t.SchemaName)
             .IsRequired()
             .HasMaxLength(100);
 

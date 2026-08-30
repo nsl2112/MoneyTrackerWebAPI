@@ -16,11 +16,11 @@ public class TenantDbContext(
     public DbSet<IncomeItem> IncomeItems { get; set; }
     public DbSet<IncomeCategory> IncomeCategories { get; set; } 
     public DbSet<Currency> Currencies { get; set; }
-    
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        
+
         modelBuilder.ApplyConfiguration(new CurrencyConfiguration());
         modelBuilder.ApplyConfiguration(new ExpenseCategoryConfiguration());
         modelBuilder.ApplyConfiguration(new ExpenseItemTypeConfiguration());
@@ -31,7 +31,7 @@ public class TenantDbContext(
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         base.OnConfiguring(optionsBuilder);
-        optionsBuilder.UseNpgsql(connectionStringsOptions.Value.PostgreSqlConnection 
-            + $"; Search Path=Tenant_{tenantService.GetCurrentTenantId()};");
+        optionsBuilder.UseNpgsql(connectionStringsOptions.Value.PostgreSqlConnection + 
+        $";Search Path={tenantService.GetCurrentTenantSchemaName()}");
     }
 }

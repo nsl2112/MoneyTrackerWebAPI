@@ -34,11 +34,6 @@ public class ExpenseItemTypeConfiguration : IEntityTypeConfiguration<ExpenseItem
         builder.Property(e => e.TransactionDate)
             .HasColumnType("TIMESTAMP")
             .IsRequired();
-
-        builder.HasOne(e => e.AppUser)
-            .WithMany()
-            .HasForeignKey(e => e.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
         
         builder.HasData(
             new ExpenseItem

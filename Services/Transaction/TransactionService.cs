@@ -87,11 +87,12 @@ public class TransactionService<T>(TenantDbContext context) : ITransaction
             """, timePeriodValue, userIdValue)
             .ToListAsync();
 
-            var mapDateTimeToStringResult = totalTransactionByTime.Select(t => new TransactionTotalByTimeStringDTO
-            {
-                TimePeriod = Utils.ConvertTimeValue(timePeriod, t.TimePeriod),
-                TotalAmount = t.TotalAmount,
-            });
+            var mapDateTimeToStringResult = totalTransactionByTime
+                .Select(t => new TransactionTotalByTimeStringDTO
+                {
+                    TimePeriod = Utils.ConvertTimeValue(timePeriod, t.TimePeriod),
+                    TotalAmount = t.TotalAmount,
+                });
 
         return mapDateTimeToStringResult;
     }

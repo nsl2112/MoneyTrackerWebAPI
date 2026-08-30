@@ -19,7 +19,6 @@ public abstract class TransactionItem
     public DateTime TransactionDate { get; set; }
     
     public string? UserId { get; set; }
-    public AppUser? AppUser { get; set; }
 }
 
 public class ExpenseItem : TransactionItem

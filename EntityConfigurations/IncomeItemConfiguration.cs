@@ -35,10 +35,5 @@ public class IncomeItemConfiguration : IEntityTypeConfiguration<IncomeItem>
             .HasForeignKey(i => i.CurrencyId)
             .OnDelete(DeleteBehavior.Restrict)
             .IsRequired();
-
-        builder.HasOne(i => i.AppUser)
-            .WithMany()
-            .HasForeignKey(i => i.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
     }
 }
