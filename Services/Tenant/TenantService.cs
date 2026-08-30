@@ -9,7 +9,7 @@ public class TenantService(
     ILogger<TenantService> logger) 
     : ITenantService
 {
-    public string? GetCurrentTenantId()
+    public string? GetCurrentTenantSchemaName()
     {
         var userEmail = httpContextAccessor.HttpContext?.User.FindFirst(JwtRegisteredClaimNames.Email)?.Value;
         if (string.IsNullOrEmpty(userEmail))
@@ -19,12 +19,12 @@ public class TenantService(
         }
 
         logger.LogInformation($"Retrieved User Email: {userEmail}");
-        
-        var tenantId = catalogDbContext.Tenants
+
+        var schemaName = catalogDbContext.Tenants
             .Where(t => t.Users.Any(u => u.Email == userEmail))
-            .Select(t => t.Id)
+            .Select(t => t.SchemaName)
             .FirstOrDefault();
 
-        return tenantId;
+        return schemaName;
     }
 }

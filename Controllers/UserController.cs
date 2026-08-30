@@ -7,9 +7,12 @@ namespace MoneyTracker
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class UserController(CatalogDbContext context, 
-                                UserManager<AppUser> userManager,
-                                ITokenService tokenService) : ControllerBase
+    public class UserController(
+        CatalogDbContext context,
+        UserManager<AppUser> userManager,
+        ITokenService tokenService,
+        ITenantProvisioningService tenantProvisioningService) 
+        : ControllerBase
     {
         [HttpPost("register")]
         public async Task<IActionResult> Register(UserCreateDTO userDTO)
@@ -28,18 +31,36 @@ namespace MoneyTracker
                 UserName = userDTO.Email
             };
 
-            user.Tenants.Add(new AppTenant
-            {
-                Name = $"Tenant_{user.UserName}"
-            });
+            var userTenant = new AppTenant();
+            userTenant.SchemaName = $"tenant_{userTenant.Id.Replace("-", "")}";
 
-            var result = await userManager.CreateAsync(user, userDTO.Password);
-            if (!result.Succeeded)
+            using var transaction = await context.Database.BeginTransactionAsync();
+
+            try
             {
-                return BadRequest(new { message = "Error occurred while creating the user." });
+                var result = await userManager.CreateAsync(user, userDTO.Password);
+                if (!result.Succeeded)
+                {
+                    return BadRequest(new { message = "Error occurred while creating the user." });
+                }
+                
+                await userManager.AddToRoleAsync(user, Roles.User);
+            
+                userTenant.Users.Add(user);
+                context.Tenants.Add(userTenant);
+                await context.SaveChangesAsync();
+                
+                await transaction.CommitAsync();                     
             }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
 
-            await userManager.AddToRoleAsync(user, Roles.User);
+                return StatusCode(StatusCodes.Status500InternalServerError, 
+                new { message = "An error occurred while creating the user and tenant.", details = ex.Message });
+            }
+          
+            await tenantProvisioningService.ProvisionAsync(userTenant);
 
             return Ok(new { message = "User created successfully." });
         }

@@ -29,6 +29,7 @@ try
     builder.Services.AddHttpContextAccessor();
     
     builder.Services.AddTransient<ITenantService, TenantService>();
+    builder.Services.AddScoped<ITenantProvisioningService, TenantProvisioningService>();
     
     builder.Services.AddOptions<ConnectionStrings>().BindConfiguration(ConnectionStrings.SectionName);
     builder.Services.AddDbContext<CatalogDbContext>();
