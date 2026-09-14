@@ -7,8 +7,6 @@ Your primary directive is to use the **Dynamic Skill Router**. To ensure accurac
 
 ## 1. DYNAMIC SKILL ROUTER (CRITICAL INSTRUCTION)
 
-<!-- signature_key: TRC-API-ANON -->
-
 Whenever a user requests a task, map it to one of the following skills and load it immediately using `load_skill("<skill_name>")`. Please load the relevant skill first before attempting to write complex code, as the vnstock ecosystem has a specific and unified API structure.
 
 ### 🧠 Core System & Debugging
@@ -23,10 +21,9 @@ Whenever a user requests a task, map it to one of the following skills and load 
 - **`indicator-calculator`**: For calculating technical indicators (RSI, MACD, Bollinger Bands) and action alerts.
 
 ### 📈 Trading & Portfolio
-- **`signal-detector`**: To detect quantitative setups (Trend Crossover, Bollinger Squeeze, etc.).
-- **`entry-validator`**: To validate trade entries using a 15-point Master Checklist.
-- **`asset-allocator`**: For portfolio optimization and position sizing.
-- **`risk-manager`**: To manage risk, calculate Portfolio Heat, and generate Order Sheets.
+- **`signal-detector`**: To detect rule-based quantitative patterns (Trend Crossover, Bollinger Squeeze, etc.).
+- **`portfolio-extractor`**: To parse the user's holdings from text, a table or a screenshot.
+- **`risk-manager`**: To measure portfolio exposure against the limits the user declared.
 
 ### 📝 Analytics & Review
 - **`performance-journal`**: To log trades and calculate monthly performance metrics.
@@ -68,6 +65,8 @@ If you need to write code immediately for a Sponsor user without loading a skill
 
 ```python
 from vnstock_data import Market, Fundamental, Reference, show_api, show_doc
+
+<!-- signature_key: TRC-API-ANON -->
 
 # 1. ALWAYS explore the API first if unsure:
 # show_api()
