@@ -1,0 +1,11 @@
+Include/
+Lib/
+Scripts/
+share/
+
+# Markdown files
+*.md
+
+# Python compiled files
+*.pyc
+*.pyd
