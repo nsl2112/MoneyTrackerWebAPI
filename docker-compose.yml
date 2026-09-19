@@ -1,0 +1,32 @@
+name: moneytracker
+services:
+  moneytracker:
+    image: moneytracker:latest
+    container_name: moneytracker
+    ports:
+      - "8000:8080"
+    networks:
+      - moneytracker-network
+    restart: on-failure
+
+  investment:
+    image: investment:latest
+    container_name: investment
+    ports:
+      - "8001:8081"
+    networks:
+      - moneytracker-network
+    restart: on-failure
+  
+  gateway:
+    image: gateway:latest
+    container_name: gateway
+    ports:
+      - "8080:8080"
+    networks:
+      - moneytracker-network
+    restart: on-failure
+  
+networks:
+  moneytracker-network:
+    
