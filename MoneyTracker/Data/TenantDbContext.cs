@@ -2,13 +2,15 @@ using System;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Npgsql;
 
 namespace MoneyTracker;
 
 public class TenantDbContext(
     DbContextOptions<TenantDbContext> options,
     IOptions<ConnectionStrings> connectionStringsOptions,
-    ITenantService tenantService)
+    ITenantService tenantService,
+    TenantSchemaContext tenantSchemaContext)
     : DbContext(options)
 {
     public DbSet<ExpenseItem> ExpenseItems { get; set; }
@@ -31,7 +33,19 @@ public class TenantDbContext(
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         base.OnConfiguring(optionsBuilder);
-        optionsBuilder.UseNpgsql(connectionStringsOptions.Value.PostgreSqlConnection + 
-        $";Search Path={tenantService.GetCurrentTenantSchemaName()}");
+        var schemaName = tenantSchemaContext.SchemaName ?? tenantService.GetCurrentTenantSchemaName();
+        if (string.IsNullOrWhiteSpace(schemaName))
+        {
+            throw new InvalidOperationException("A tenant schema must be selected before using the database context.");
+        }
+
+        tenantSchemaContext.SetSchemaName(schemaName);
+
+        var connectionStringBuilder = new NpgsqlConnectionStringBuilder(connectionStringsOptions.Value.PostgreSqlConnection)
+        {
+            SearchPath = schemaName
+        };
+
+        optionsBuilder.UseNpgsql(connectionStringBuilder.ConnectionString);
     }
 }

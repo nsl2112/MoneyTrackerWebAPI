@@ -1,7 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using MoneyTracker;
 using Scalar.AspNetCore;
@@ -27,19 +25,13 @@ try
     });
 
     builder.Services.AddHttpContextAccessor();
-    
-    builder.Services.AddTransient<ITenantService, TenantService>();
-    builder.Services.AddScoped<ITenantProvisioningService, TenantProvisioningService>();
+    builder.Services.AddScoped<ITenantService, TenantService>();
     
     builder.Services.AddOptions<ConnectionStrings>().BindConfiguration(ConnectionStrings.SectionName);
-    builder.Services.AddDbContext<CatalogDbContext>();
+    builder.Services.AddScoped<TenantSchemaContext>();
     builder.Services.AddDbContext<TenantDbContext>();
     
-    builder.Services.AddIdentity<AppUser, IdentityRole>()
-                    .AddEntityFrameworkStores<CatalogDbContext>();
-    
     builder.Services.AddOptions<JWT>().BindConfiguration(JWT.SectionName);
-    builder.Services.AddScoped<ITokenService, JWTTokenService>();
     builder.Services.AddAuthentication(options =>
     {
         options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -63,10 +55,7 @@ try
     });
     builder.Services.AddAuthorization();
     
-    builder.Services.AddControllers(options =>
-    {
-        options.Filters.Add<ValidationActionFitler>();
-    });
+    builder.Services.AddControllers();
     // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
     builder.Services.AddOpenApi();
 
