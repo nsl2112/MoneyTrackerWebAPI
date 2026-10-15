@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Npgsql;
 
@@ -11,12 +12,25 @@ namespace MoneyTracker.Controllers
     public class TenantDbController(
         TenantDbContext context,
         TenantSchemaContext tenantSchemaContext,
-        IOptions<ConnectionStrings> connectionStringsOptions)
+        IOptions<ConnectionStrings> connectionStringsOptions,
+        IConfiguration configuration)
         : ControllerBase
     {
         [HttpPost]
-        public async Task<IActionResult> CreateTenantSchema([FromHeader] string schemaName, CancellationToken cancellationToken)
+        public async Task<IActionResult> CreateTenantSchema(
+            [FromHeader(Name = "X-Tenant-Schema")] string? xTenantSchema,
+            [FromHeader(Name = "schemaName")] string? headerSchemaName,
+            CancellationToken cancellationToken)
         {
+            var internalKey = Request.Headers["X-Internal-Key"].FirstOrDefault();
+            var expectedKey = configuration["InternalAuth:SecretKey"] ?? "moneytracker-internal-gateway-secret-key";
+
+            if (string.IsNullOrEmpty(internalKey) || internalKey != expectedKey)
+            {
+                return Unauthorized(new { message = "Unauthorized access to internal endpoint." });
+            }
+
+            var schemaName = !string.IsNullOrEmpty(xTenantSchema) ? xTenantSchema : headerSchemaName;
             if (string.IsNullOrEmpty(schemaName))
             {
                 return BadRequest("Schema name cannot be null or empty.");

@@ -11,7 +11,8 @@ namespace MoneyTracker
         CatalogDbContext context,
         UserManager<AppUser> userManager,
         ITokenService tokenService,
-        ITenantProvisioningService tenantProvisioningService) 
+        ITenantProvisioningService tenantProvisioningService,
+        ILogger<UserController> logger)
         : ControllerBase
     {
         [HttpPost("register")]
@@ -41,7 +42,11 @@ namespace MoneyTracker
                 var result = await userManager.CreateAsync(user, userDTO.Password);
                 if (!result.Succeeded)
                 {
-                    return BadRequest(new { message = "Error occurred while creating the user." });
+                    return BadRequest(new
+                    {
+                        message = "Error occurred while creating the user.",
+                        errors = result.Errors.Select(e => e.Description)
+                    });
                 }
                 
                 await userManager.AddToRoleAsync(user, Roles.User);
@@ -55,9 +60,10 @@ namespace MoneyTracker
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
+                logger.LogError(ex, "An error occurred while creating user {Email} and tenant.", userDTO.Email);
 
                 return StatusCode(StatusCodes.Status500InternalServerError, 
-                new { message = "An error occurred while creating the user and tenant.", details = ex.Message });
+                    new { message = "An error occurred while creating the user and tenant." });
             }
           
             await tenantProvisioningService.ProvisionAsync(userTenant);
@@ -75,6 +81,7 @@ namespace MoneyTracker
             }
 
             var roles = await userManager.GetRolesAsync(user);
+            await context.Entry(user).Collection(u => u.Tenants).LoadAsync();
             var (token, expiration) = tokenService.GenerateToken(user, roles);
 
             return Ok(new

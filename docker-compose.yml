@@ -5,6 +5,10 @@ services:
     container_name: moneytracker
     ports:
       - "8000:8080"
+    environment:
+      - InternalAuth__SecretKey=${INTERNAL_GATEWAY_SECRET:-moneytracker-internal-gateway-secret-key}
+      - ConnectionStrings__PostgreSqlConnection=${DATABASE_CONNECTION_STRING:-}
+      - ConnectionStrings__PostgreSqlAdminConnection=${DATABASE_ADMIN_CONNECTION_STRING:-}
     networks:
       - moneytracker-network
     restart: on-failure
@@ -14,6 +18,8 @@ services:
     container_name: investment
     ports:
       - "8001:8081"
+    environment:
+      - InternalAuth__SecretKey=${INTERNAL_GATEWAY_SECRET:-moneytracker-internal-gateway-secret-key}
     networks:
       - moneytracker-network
     restart: on-failure
@@ -23,6 +29,13 @@ services:
     container_name: gateway
     ports:
       - "8080:8080"
+    environment:
+      - InternalAuth__SecretKey=${INTERNAL_GATEWAY_SECRET:-moneytracker-internal-gateway-secret-key}
+      - Downstream__MoneyTrackerUrl=http://moneytracker:8080/
+      - JWT__Key=${JWT_KEY:-super-secret-jwt-signing-key-for-moneytracker-gateway-2026}
+      - JWT__Issuer=${JWT_ISSUER:-http://localhost:8080}
+      - JWT__Audience=${JWT_AUDIENCE:-http://localhost:8080}
+      - ConnectionStrings__PostgreSqlConnection=${DATABASE_CONNECTION_STRING:-}
     networks:
       - moneytracker-network
     restart: on-failure
