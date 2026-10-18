@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Yarp.ReverseProxy.Transforms;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,7 +46,43 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddAuthorization();
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer((document, context, cancellationToken) =>
+    {
+        document.Components ??= new OpenApiComponents();
+        document.Components.SecuritySchemes = new Dictionary<string, OpenApiSecurityScheme>
+        {
+            ["Bearer"] = new OpenApiSecurityScheme
+            {
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT",
+                In = ParameterLocation.Header,
+                Description = "Enter JWT Bearer token obtained from /api/User/login"
+            }
+        };
+
+        foreach (var operation in document.Paths.Values.SelectMany(path => path.Operations.Values))
+        {
+            operation.Security.Add(new OpenApiSecurityRequirement
+            {
+                [
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        }
+                    }
+                ] = []
+            });
+        }
+
+        return Task.CompletedTask;
+    });
+});
 builder.Services.AddControllers();
 builder.Services.AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
@@ -111,7 +148,39 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.MapScalarApiReference();
+
+    var openApiDocs = builder.Configuration
+        .GetSection("OpenApi:Documents")
+        .Get<List<OpenApiDocumentConfig>>() ?? [];
+
+    var serverUrl = builder.Configuration["OpenApi:ServerUrl"] ?? "http://localhost:8080";
+
+    app.MapScalarApiReference(options =>
+    {
+        options.WithTitle(builder.Configuration["OpenApi:Title"] ?? "MoneyTracker Gateway API");
+
+        if (!string.IsNullOrEmpty(serverUrl))
+        {
+            options.AddServer(serverUrl, "API Gateway");
+        }
+
+        if (openApiDocs.Count > 0)
+        {
+            foreach (var doc in openApiDocs)
+            {
+                options.AddDocument(doc.Name, doc.Title, doc.RoutePattern, doc.IsDefault);
+            }
+        }
+        else
+        {
+            options.AddDocument("gateway", "Gateway API", "/openapi/v1.json", isDefault: true);
+        }
+
+        options.AddHttpAuthentication("Bearer", http =>
+        {
+            http.Token = "";
+        });
+    });
 }
 
 app.UseHttpsRedirection();
@@ -120,3 +189,11 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapReverseProxy();
 app.Run();
+
+public class OpenApiDocumentConfig
+{
+    public string Name { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string RoutePattern { get; set; } = string.Empty;
+    public bool IsDefault { get; set; }
+}
