@@ -36,6 +36,8 @@ services:
       - JWT__Issuer=${JWT_ISSUER:-http://localhost:8080}
       - JWT__Audience=${JWT_AUDIENCE:-http://localhost:8080}
       - ConnectionStrings__PostgreSqlConnection=${DATABASE_CONNECTION_STRING:-}
+      - ReverseProxy__Clusters__investment__Destinations__base__Address=http://investment:8081/
+      - ReverseProxy__Clusters__money_tracker__Destinations__base__Address=http://moneytracker:8080/
     networks:
       - moneytracker-network
     restart: on-failure
