@@ -12,12 +12,17 @@ public class JWTTokenService(IOptions<JWT> options) : ITokenService
     {
         var expiration = DateTime.UtcNow.AddMinutes(options.Value.DurationInMinutes);
 
+        var tenant = user.Tenants.FirstOrDefault();
         var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id),
-            new Claim(JwtRegisteredClaimNames.Email, user.Email),
+            new Claim(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
             new Claim(JwtRegisteredClaimNames.Name, $"{user.FirstName} {user.LastName}"),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new Claim("tenant_id", tenant?.Id ?? string.Empty),
+            new Claim("tenantId", tenant?.Id ?? string.Empty),
+            new Claim("schemaName", tenant?.SchemaName ?? string.Empty),
+            new Claim("schema", tenant?.SchemaName ?? string.Empty)
         };
 
         claims.AddRange(roles.Select(role => new Claim("role", role)));

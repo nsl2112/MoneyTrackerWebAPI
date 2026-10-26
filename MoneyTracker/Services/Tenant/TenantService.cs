@@ -1,29 +1,30 @@
-using System;
-using System.IdentityModel.Tokens.Jwt;
+using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Http;
 
 namespace MoneyTracker;
 
-public class TenantService(
-    IHttpContextAccessor httpContextAccessor,
-    CatalogDbContext catalogDbContext,
-    ILogger<TenantService> logger) 
-    : ITenantService
+public sealed class TenantService(IHttpContextAccessor httpContextAccessor) : ITenantService
 {
+    private static readonly Regex SafeSchemaRegex = new(@"^[a-zA-Z0-9_]+$", RegexOptions.Compiled);
+
     public string? GetCurrentTenantSchemaName()
     {
-        var userEmail = httpContextAccessor.HttpContext?.User.FindFirst(JwtRegisteredClaimNames.Email)?.Value;
-        if (string.IsNullOrEmpty(userEmail))
+        var httpContext = httpContextAccessor.HttpContext;
+        if (httpContext == null) return null;
+
+        var schemaName = httpContext.Request.Headers["X-Tenant-Schema"].FirstOrDefault()
+                         ?? httpContext.Request.Headers["schemaName"].FirstOrDefault()
+                         ?? httpContext.User?.FindFirst("schemaName")?.Value;
+
+        if (string.IsNullOrWhiteSpace(schemaName))
         {
-            logger.LogError("User email not found in the current context.");
             return null;
         }
 
-        logger.LogInformation($"Retrieved User Email: {userEmail}");
-
-        var schemaName = catalogDbContext.Tenants
-            .Where(t => t.Users.Any(u => u.Email == userEmail))
-            .Select(t => t.SchemaName)
-            .FirstOrDefault();
+        if (!SafeSchemaRegex.IsMatch(schemaName))
+        {
+            throw new ArgumentException("The tenant schema name contains invalid characters.", nameof(schemaName));
+        }
 
         return schemaName;
     }

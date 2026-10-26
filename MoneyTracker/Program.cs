@@ -1,8 +1,3 @@
-using System.IdentityModel.Tokens.Jwt;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using MoneyTracker;
 using Scalar.AspNetCore;
 using Serilog;
@@ -27,46 +22,19 @@ try
     });
 
     builder.Services.AddHttpContextAccessor();
-    
-    builder.Services.AddTransient<ITenantService, TenantService>();
-    builder.Services.AddScoped<ITenantProvisioningService, TenantProvisioningService>();
+    builder.Services.AddScoped<ITenantService, TenantService>();
     
     builder.Services.AddOptions<ConnectionStrings>().BindConfiguration(ConnectionStrings.SectionName);
-    builder.Services.AddDbContext<CatalogDbContext>();
+    builder.Services.AddScoped<TenantSchemaContext>();
     builder.Services.AddDbContext<TenantDbContext>();
     
-    builder.Services.AddIdentity<AppUser, IdentityRole>()
-                    .AddEntityFrameworkStores<CatalogDbContext>();
-    
-    builder.Services.AddOptions<JWT>().BindConfiguration(JWT.SectionName);
-    builder.Services.AddScoped<ITokenService, JWTTokenService>();
-    builder.Services.AddAuthentication(options =>
-    {
-        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    }).AddJwtBearer(options =>
-    {
-        options.MapInboundClaims = false;
-        options.SaveToken = false;
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["JWT:Issuer"],
-            ValidAudience = builder.Configuration["JWT:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(builder.Configuration["JWT:Key"])),
-            NameClaimType = JwtRegisteredClaimNames.Name,
-            RoleClaimType = "role",
-        };
-    });
+    builder.Services.AddAuthentication(GatewayHeaderAuthenticationOptions.DefaultScheme)
+        .AddScheme<GatewayHeaderAuthenticationOptions, GatewayHeaderAuthenticationHandler>(
+            GatewayHeaderAuthenticationOptions.DefaultScheme, null);
+
     builder.Services.AddAuthorization();
     
-    builder.Services.AddControllers(options =>
-    {
-        options.Filters.Add<ValidationActionFitler>();
-    });
+    builder.Services.AddControllers();
     // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
     builder.Services.AddOpenApi();
 
